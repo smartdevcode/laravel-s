@@ -46,8 +46,7 @@ class LaravelSCommand extends Command
     protected function loadConfigManually()
     {
         // Load configuration laravel.php manually for Lumen
-        $basePath = config('laravels.laravel_base_path') ?: base_path();
-        if ($this->isLumen && file_exists($basePath . '/config/laravels.php')) {
+        if ($this->isLumen && file_exists(base_path('config/laravels.php'))) {
             $this->getLaravel()->configure('laravels');
         }
     }
@@ -77,14 +76,11 @@ EOS;
         $this->outputLogo();
 
         $svrConf = config('laravels');
-
-        $basePath = $svrConf['swoole']['laravel_base_path'] ?: base_path();
-
         if (empty($svrConf['swoole']['document_root'])) {
-            $svrConf['swoole']['document_root'] = $basePath . '/public';
+            $svrConf['swoole']['document_root'] = base_path('public');
         }
         if (empty($svrConf['process_prefix'])) {
-            $svrConf['process_prefix'] = $basePath;
+            $svrConf['process_prefix'] = base_path();
         }
         if (!empty($svrConf['events'])) {
             if (empty($svrConf['swoole']['task_worker_num']) || $svrConf['swoole']['task_worker_num'] <= 0) {
@@ -94,7 +90,7 @@ EOS;
         }
 
         $laravelConf = [
-            'rootPath'           => $basePath,
+            'rootPath'           => base_path(),
             'staticPath'         => $svrConf['swoole']['document_root'],
             'register_providers' => array_unique((array)array_get($svrConf, 'register_providers', [])),
             'isLumen'            => $this->isLumen,
@@ -206,8 +202,7 @@ EOS;
 
     protected function publish()
     {
-        $basePath = config('laravels.laravel_base_path') ?: base_path();
-        $to = $basePath . '/config/laravels.php';
+        $to = base_path('config/laravels.php');
         if (file_exists($to)) {
             $choice = $this->anticipate($to . ' already exists, do you want to override it ? Y/N', ['Y', 'N'], 'N');
             if (!$choice || strtoupper($choice) !== 'Y') {
@@ -240,9 +235,9 @@ EOS;
 
         $files->copy($from, $to);
 
-        $from = str_replace($basePath, '', realpath($from));
+        $from = str_replace(base_path(), '', realpath($from));
 
-        $to = str_replace($basePath, '', realpath($to));
+        $to = str_replace(base_path(), '', realpath($to));
 
         $this->line('<info>Copied File</info> <comment>[' . $from . ']</comment> <info>To</info> <comment>[' . $to . ']</comment>');
     }

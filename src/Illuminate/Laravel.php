@@ -104,8 +104,14 @@ class Laravel
             } else {
                 $content = (string)$response;
             }
-            if (!empty($this->app->middleware)) {
-                $this->app->callTerminableMiddleware($response);
+
+            $reflect = new \ReflectionObject($this->app);
+            $middleware = $reflect->getProperty('middleware');
+            $middleware->setAccessible(true);
+            if (count($middleware->getValue($this->app)) > 0) {
+                $callTerminableMiddleware = $reflect->getMethod('callTerminableMiddleware');
+                $callTerminableMiddleware->setAccessible(true);
+                $callTerminableMiddleware->invoke($this->app, $response);
             }
         } else {
             $response = $this->laravelKernel->handle($request);
