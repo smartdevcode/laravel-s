@@ -2,11 +2,12 @@
 
 namespace Hhxsv5\LaravelS\Illuminate;
 
+use Illuminate\Support\Facades\Facade;
+use Illuminate\Http\Request as IlluminateRequest;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
-use Illuminate\Http\Request as IlluminateRequest;
-use Illuminate\Support\Facades\Facade;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Hhxsv5\LaravelS\Illuminate\Database\DatabaseServiceProvider;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class Laravel
@@ -23,7 +24,7 @@ class Laravel
      */
     protected $laravelReflect;
 
-    protected static $snapshotKeys = ['config', 'cookie', 'auth', 'auth.password'];
+    protected static $snapshotKeys = ['config', 'cookie', 'auth', /*'auth.password'*/];
 
     /**
      * @var array $snapshots
@@ -250,9 +251,9 @@ class Laravel
         return $rsp;
     }
 
-    public function reRegisterServiceProvider($providerCls, array $clearFacades = [])
+    public function reRegisterServiceProvider($providerCls, array $clearFacades = [], $force = false)
     {
-        if (class_exists($providerCls, false)) {
+        if (class_exists($providerCls, false) || $force) {
             if ($this->conf['is_lumen']) {
                 $loadedProviders = $this->laravelReflect->getProperty('loadedProviders');
                 $loadedProviders->setAccessible(true);
