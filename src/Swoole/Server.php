@@ -17,7 +17,7 @@ class Server
     protected $conf;
 
     /**
-     * @var \swoole_http_server
+     * @var \swoole_http_server|\swoole_websocket_server
      */
     protected $swoole;
 
@@ -33,14 +33,23 @@ class Server
 
         $ip = isset($conf['listen_ip']) ? $conf['listen_ip'] : '127.0.0.1';
         $port = isset($conf['listen_port']) ? $conf['listen_port'] : 5200;
+        $socketType = isset($conf['socket_type']) ? $conf['socket_type'] : \SWOOLE_SOCK_TCP;
+
+        if ($socketType === \SWOOLE_SOCK_UNIX_STREAM) {
+            $socketDir = dirname($ip);
+            if (!file_exists($socketDir)) {
+                mkdir($socketDir);
+            }
+        }
+
         $settings = isset($conf['swoole']) ? $conf['swoole'] : [];
         $settings['enable_static_handler'] = !empty($conf['handle_static']);
 
         $serverClass = $this->enableWebSocket ? \swoole_websocket_server::class : \swoole_http_server::class;
         if (isset($settings['ssl_cert_file'], $settings['ssl_key_file'])) {
-            $this->swoole = new $serverClass($ip, $port, \SWOOLE_PROCESS, \SWOOLE_SOCK_TCP | \SWOOLE_SSL);
+            $this->swoole = new $serverClass($ip, $port, \SWOOLE_PROCESS, $socketType | \SWOOLE_SSL);
         } else {
-            $this->swoole = new $serverClass($ip, $port, \SWOOLE_PROCESS);
+            $this->swoole = new $serverClass($ip, $port, \SWOOLE_PROCESS, $socketType);
         }
 
         $this->swoole->set($settings);
