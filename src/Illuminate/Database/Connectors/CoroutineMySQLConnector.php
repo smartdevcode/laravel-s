@@ -6,7 +6,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Database\Connectors\Connector;
 use Illuminate\Database\Connectors\ConnectorInterface;
 use Hhxsv5\LaravelS\Illuminate\Database\CoroutineMySQL;
-use Illuminate\Support\Str;
 
 class CoroutineMySQLConnector extends Connector implements ConnectorInterface
 {
@@ -19,10 +18,15 @@ class CoroutineMySQLConnector extends Connector implements ConnectorInterface
      */
     public function createConnection($dsn, array $config, array $options)
     {
+        $username = Arr::get($config, 'username');
+        $password = Arr::get($config, 'password');
+
         try {
             $mysql = $this->connect($config);
         } catch (\Exception $e) {
-            $mysql = $this->_tryAgainIfCausedByLostConnection($e, $config);
+            $mysql = $this->_tryAgainIfCausedByLostConnection(
+                $e, $dsn, $username, $password, $config
+            );
         }
 
         return $mysql;
@@ -30,14 +34,17 @@ class CoroutineMySQLConnector extends Connector implements ConnectorInterface
 
     /**
      * @param \Throwable $e
-     * @param array $config
+     * @param string $dsn
+     * @param string $username
+     * @param string $password
+     * @param array $options
      * @return CoroutineMySQL
      * @throws \Throwable
      */
-    protected function _tryAgainIfCausedByLostConnection($e, array $config)
+    protected function _tryAgainIfCausedByLostConnection($e, $dsn, $username, $password, $options)
     {
-        if ($this->causedByLostConnection($e) || Str::contains($e->getMessage(), 'is closed')) {
-            return $this->connect($config);
+        if ($this->causedByLostConnection($e)) {
+            return $this->connect($options);
         }
         throw $e;
     }
