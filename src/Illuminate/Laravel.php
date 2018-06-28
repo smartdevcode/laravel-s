@@ -2,13 +2,12 @@
 
 namespace Hhxsv5\LaravelS\Illuminate;
 
-use Hhxsv5\LaravelS\HttpFoundation\GuessMimeType;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Http\Request as IlluminateRequest;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser;
+use Hhxsv5\LaravelS\Illuminate\Database\DatabaseServiceProvider;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class Laravel
@@ -70,11 +69,6 @@ class Laravel
 
     protected function createApp()
     {
-        if ($this->conf['handle_static']) {
-            MimeTypeGuesser::reset();
-            MimeTypeGuesser::getInstance()->register(new GuessMimeType());
-        }
-
         $this->app = require $this->conf['root_path'] . '/bootstrap/app.php';
     }
 
@@ -212,13 +206,13 @@ class Laravel
         $publicPath = $this->conf['static_path'];
         $requestFile = $publicPath . $uri;
         if (is_file($requestFile)) {
-            return $this->createStaticResponse($requestFile, $request);
+            return $this->createStaticResponse($requestFile, $request->header('if-modified-since'));
         } elseif (is_dir($requestFile)) {
             $indexFile = $this->lookupIndex($requestFile);
             if ($indexFile === false) {
                 return false;
             } else {
-                return $this->createStaticResponse($indexFile, $request);
+                return $this->createStaticResponse($indexFile, $request->header('if-modified-since'));
             }
         } else {
             return false;
@@ -237,13 +231,24 @@ class Laravel
         return false;
     }
 
-    public function createStaticResponse($requestFile, IlluminateRequest $request)
+    public function createStaticResponse($requestFile, $modifiedSince = null)
     {
-        $response = new BinaryFileResponse($requestFile);
-        $response->prepare($request);
-        $response->isNotModified($request);
+        $code = SymfonyResponse::HTTP_OK;
+        $mtime = filemtime($requestFile);
+        if ($modifiedSince !== null) {
+            $modifiedSince = strtotime($modifiedSince);
+            if ($modifiedSince !== false && $modifiedSince >= $mtime) {
+                $code = SymfonyResponse::HTTP_NOT_MODIFIED;
+            }
+        }
 
-        return $response;
+        $maxAge = 24 * 3600;
+        $rsp = new BinaryFileResponse($requestFile, $code);
+        $rsp->setLastModified(new \DateTime(date('Y-m-d H:i:s', $mtime)));
+        $rsp->setMaxAge($maxAge);
+        $rsp->setPrivate();
+        $rsp->setExpires(new \DateTime(date('Y-m-d H:i:s', time() + $maxAge)));
+        return $rsp;
     }
 
     public function reRegisterServiceProvider($providerCls, array $clearFacades = [], $force = false)
