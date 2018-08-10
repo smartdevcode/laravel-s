@@ -89,7 +89,7 @@ class TestController extends Controller
 
 ## 不能使用的全局变量
 
-- $_GET、$_POST、$_FILES、$_COOKIE、$_REQUEST、$_SESSION、$GLOBALS
+- `$_SESSION`
 
 ## 大小限制
 

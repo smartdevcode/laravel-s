@@ -819,6 +819,8 @@ public function onReceive(\swoole_server $server, $fd, $reactorId, $data)
 
 ```PHP
 namespace App\Processes;
+use App\Tasks\TestTask;
+use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Hhxsv5\LaravelS\Swoole\Process\CustomProcessInterface;
 class TestProcess implements CustomProcessInterface
 {
@@ -844,6 +846,12 @@ class TestProcess implements CustomProcessInterface
         while (true) {
             sleep(1);
             \Log::info('Do something');
+            // 自定义进程中也可以投递Task，但不支持Task的finish()回调。
+            // 注意：
+            // 1.参数2需传true
+            // 2.config/laravels.php中修改配置task_ipc_mode为1或2，参考 https://wiki.swoole.com/wiki/page/296.html
+            $ret = Task::deliver(new TestTask('task data'), true);
+            var_dump($ret);
         }
     }
 }
@@ -876,7 +884,7 @@ class TestProcess implements CustomProcessInterface
 
 - [常见问题](https://github.com/hhxsv5/laravel-s/blob/master/KnownIssues-CN.md)
 
-- 应通过`Illuminate\Http\Request`对象来获取请求信息，$_SERVER、$_ENV是可读取的，`不能使用`$_GET、$_POST、$_FILES、$_COOKIE、$_REQUEST、$_SESSION、$GLOBALS。
+- 推荐通过`Illuminate\Http\Request`对象来获取请求信息，兼容$_SERVER、$_ENV、$_GET、$_POST、$_FILES、$_COOKIE、$_REQUEST，`不能使用`$_SESSION。
 
 ```PHP
 public function form(\Illuminate\Http\Request $request)
