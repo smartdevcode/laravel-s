@@ -19,7 +19,7 @@ class LaravelSCommand extends Command
     {
         $this->actions = ['start', 'stop', 'restart', 'reload', 'publish'];
         $actions = implode('|', $this->actions);
-        $this->signature .= sprintf(' {action : %s} {--d|daemonize : Whether run as a daemon for start & restart}', $actions);
+        $this->signature .= sprintf(' {action : %s}', $actions);
         $this->description .= ': ' . $actions;
 
         parent::__construct();
@@ -91,9 +91,6 @@ EOS;
                 return;
             }
         }
-        if ($this->option('daemonize')) {
-            $svrConf['swoole']['daemonize'] = true;
-        }
 
         $laravelConf = [
             'root_path'          => $basePath,
@@ -110,10 +107,6 @@ EOS;
                 $this->warn(sprintf('LaravelS: PID[%s] is already running at %s:%s.', $pid, $svrConf['listen_ip'], $svrConf['listen_port']));
                 return;
             }
-        }
-
-        if (!$svrConf['swoole']['daemonize']) {
-            $this->info(sprintf('LaravelS: Swoole is listening at %s:%s.', $svrConf['listen_ip'], $svrConf['listen_port']));
         }
 
         // Implements gracefully reload, avoid including laravel's files before worker start
@@ -133,7 +126,7 @@ EOS;
             $time++;
         }
         if (file_exists($pidFile)) {
-            $this->info(sprintf('LaravelS: PID[%s] is listening at %s:%s.', file_get_contents($pidFile), $svrConf['listen_ip'], $svrConf['listen_port']));
+            $this->info(sprintf('LaravelS: PID[%s] is running at %s:%s.', file_get_contents($pidFile), $svrConf['listen_ip'], $svrConf['listen_port']));
         } else {
             $this->error(sprintf('LaravelS: PID file[%s] does not exist.', $pidFile));
         }

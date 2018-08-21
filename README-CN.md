@@ -129,9 +129,9 @@ $app->configure('laravels');
 
 | 命令 | 说明 |
 | --------- | --------- |
-| `start` | 启动LaravelS，展示已启动的进程列表 "*ps -ef&#124;grep laravels*"。选项`-d`或`--daemonize`以守护进程的方式运行，此选项将覆盖`laravels.php`中`swoole.daemonize`设置 |
+| `start` | 启动LaravelS，展示已启动的进程列表 *ps -ef&#124;grep laravels* |
 | `stop` | 停止LaravelS |
-| `restart` | 重启LaravelS，支持选项`-d`或`--daemonize` |
+| `restart` | 重启LaravelS |
 | `reload` | 平滑重启所有worker进程，这些worker进程内包含你的业务代码和框架(Laravel/Lumen)代码，不会重启master/manger进程 |
 | `publish` | 发布配置文件到你的项目中`config/laravels.php` |
 
@@ -819,8 +819,6 @@ public function onReceive(\swoole_server $server, $fd, $reactorId, $data)
 
 ```PHP
 namespace App\Processes;
-use App\Tasks\TestTask;
-use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Hhxsv5\LaravelS\Swoole\Process\CustomProcessInterface;
 class TestProcess implements CustomProcessInterface
 {
@@ -844,14 +842,8 @@ class TestProcess implements CustomProcessInterface
         // 进程运行的代码，不能退出，一旦退出Manager进程会自动再次创建该进程。
         \Log::info(__METHOD__, [posix_getpid(), $swoole->stats()]);
         while (true) {
-            \Log::info('Do something');
             sleep(1);
-            // 自定义进程中也可以投递Task，但不支持Task的finish()回调。
-            // 注意：
-            // 1.参数2需传true
-            // 2.config/laravels.php中修改配置task_ipc_mode为1或2，参考 https://wiki.swoole.com/wiki/page/296.html
-            $ret = Task::deliver(new TestTask('task data'), true);
-            var_dump($ret);
+            \Log::info('Do something');
         }
     }
 }
@@ -884,7 +876,7 @@ class TestProcess implements CustomProcessInterface
 
 - [常见问题](https://github.com/hhxsv5/laravel-s/blob/master/KnownIssues-CN.md)
 
-- 推荐通过`Illuminate\Http\Request`对象来获取请求信息，兼容$_SERVER、$_ENV、$_GET、$_POST、$_FILES、$_COOKIE、$_REQUEST，`不能使用`$_SESSION。
+- 应通过`Illuminate\Http\Request`对象来获取请求信息，$_SERVER、$_ENV是可读取的，`不能使用`$_GET、$_POST、$_FILES、$_COOKIE、$_REQUEST、$_SESSION、$GLOBALS。
 
 ```PHP
 public function form(\Illuminate\Http\Request $request)
@@ -1002,7 +994,6 @@ public function test(Request $req)
 | *钧泽 Panda | 10.24元 |
 | *翔 海贼王路飞 | 12元 |
 | *跃 Axiong | 10元 |
-| 落伽 | 10元 |
 
 ## License
 

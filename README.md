@@ -126,9 +126,9 @@ $app->configure('laravels');
 
 | Command | Description |
 | --------- | --------- |
-| `start` | Start LaravelS, list the processes by "*ps -ef&#124;grep laravels*", support command options `-d` and `--daemonize` to run as a daemon |
+| `start` | Start LaravelS, list the processes by *ps -ef&#124;grep laravels* |
 | `stop` | Stop LaravelS |
-| `restart` | Restart LaravelS, support command options `-d` and `--daemonize` |
+| `restart` | Restart LaravelS |
 | `reload` | Reload all worker processes(Contain your business & Laravel/Lumen codes), exclude master/manger process |
 | `publish` | Publish configuration file `laravels.php` into folder `config` |
 
@@ -543,6 +543,7 @@ class TestCronJob extends CronJob
         if ($this->i >= 10) { // Run 10 times only
             \Log::info(__METHOD__, ['stop', $this->i, microtime(true)]);
             $this->stop(); // Stop this cron job
+            // Set the second parameter true to deliver task in CronJob, but NOT support callback finish() of task.
             // Deliver task in CronJob, but NOT support callback finish() of task.
             // Note:
             // 1.Set parameter 2 to true
@@ -816,8 +817,6 @@ For TCP socket, `onConnect` and `onClose` events will be blocked when `dispatch_
 
 ```PHP
 namespace App\Processes;
-use App\Tasks\TestTask;
-use Hhxsv5\LaravelS\Swoole\Task\Task;
 use Hhxsv5\LaravelS\Swoole\Process\CustomProcessInterface;
 class TestProcess implements CustomProcessInterface
 {
@@ -841,14 +840,8 @@ class TestProcess implements CustomProcessInterface
         // The callback method cannot exit. Once exited, Manager process will automatically create the process 
         \Log::info(__METHOD__, [posix_getpid(), $swoole->stats()]);
         while (true) {
-            \Log::info('Do something');
             sleep(1);
-             // Deliver task in custom process, but NOT support callback finish() of task.
-            // Note:
-            // 1.Set parameter 2 to true
-            // 2.Modify task_ipc_mode to 1 or 2 in config/laravels.php, see https://www.swoole.co.uk/docs/modules/swoole-server/configuration
-            $ret = Task::deliver(new TestTask('task data'), true);
-            var_dump($ret);
+            \Log::info('Do something');
         }
     }
 }
@@ -882,7 +875,7 @@ class TestProcess implements CustomProcessInterface
 
 - [Known issues](https://github.com/hhxsv5/laravel-s/blob/master/KnownIssues.md)
 
-- Get all info of request from `Illuminate\Http\Request` Object, compatible with $_SERVER/$_ENV/$_GET/$_POST/$_FILES/$_COOKIE/$_REQUEST, `CANNOT USE` $_SESSION.
+- Should get all request information from `Illuminate\Http\Request` Object, $_SERVER/$_ENV are readable, `CANNOT USE` $_GET/$_POST/$_FILES/$_COOKIE/$_REQUEST/$_SESSION/$GLOBALS.
 
 ```PHP
 public function form(\Illuminate\Http\Request $request)
